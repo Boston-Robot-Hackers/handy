@@ -20,21 +20,21 @@ class DelayMeasureNode(Node):
 
         self.publisher = self.create_publisher(
             Float64MultiArray,
-            f"{peer_name}-topic",
+            f"{peer_name}_topic",
             10
         )
 
         self.subscriber = self.create_subscription(
             Float64MultiArray,
-            f"{self_name}-topic",
+            f"{self_name}_topic",
             self.message_callback,
             10
         )
 
         self.timer = self.create_timer(1.0, self.timer_callback)
         self.get_logger().info(
-            f"Node started: subscribing to {self_name}-topic, "
-            f"publishing to {peer_name}-topic"
+            f"Node started: subscribing to {self_name}_topic, "
+            f"publishing to {peer_name}_topic"
         )
 
     def timer_callback(self):
