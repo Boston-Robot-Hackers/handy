@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-# SPDX-License-Identifier: Apache-2.0
-# Copyright 2024 Wimblerobotics
+# net_latency: Network latency measurement tool for ROS2 communication
+# Author: Pito Salas and Claude Code
+# Open Source Under MIT license
 
 import sys
 import time
