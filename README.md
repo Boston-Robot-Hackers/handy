@@ -4,6 +4,54 @@ ROS2 utility package for network diagnostics and monitoring.
 
 ## Tools
 
+### ros2_params
+
+ROS2 parameter search and discovery tool with parallel scanning and live progress tracking.
+
+#### Purpose
+
+Quickly scan all running ROS2 nodes and search for parameters by name or value. Useful for:
+- Finding which nodes use a specific parameter
+- Discovering parameters across a complex system
+- Debugging parameter configuration issues
+
+#### Usage
+
+```bash
+ros2 run handy ros2_params <search_string> [timeout_seconds] [max_threads]
+```
+
+**Examples:**
+```bash
+# Search for parameters containing "sim"
+ros2 run handy ros2_params sim
+
+# Search with 5 second timeout per parameter
+ros2 run handy ros2_params frame_id 5.0
+
+# Search with custom timeout and 16 threads
+ros2 run handy ros2_params topic 3.0 16
+```
+
+#### Features
+
+- **Parallel scanning**: Scans multiple nodes simultaneously (default: 8 threads)
+- **Live progress**: Shows real-time status during scanning
+- **Complete results**: Displays all parameters from all nodes
+- **Filtered results**: Shows only parameters matching your search string
+- **Timeout handling**: Configurable timeout to handle slow-responding nodes
+
+#### Output
+
+1. Live status line during scanning:
+   ```
+   Status: total nodes: 23, in progress: 5, completed: 18, matching query: 3
+   ```
+
+2. Complete parameter table after scanning
+
+3. Filtered search results showing only matching parameters
+
 ### net_latency
 
 Network latency measurement tool for ROS2 communication across distributed systems.
