@@ -25,6 +25,7 @@ setup(
         "console_scripts": [
             "net_latency = handy.net_latency:main",
             "params = handy.ros2_params:main",
+            "tferror = handy.tf_error_detector:main",
         ],
     },
 )

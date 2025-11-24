@@ -52,6 +52,76 @@ ros2 run handy ros2_params topic 3.0 16
 
 3. Filtered search results showing only matching parameters
 
+### tf_error_detector
+
+TF transform timing diagnostic tool that monitors and detects "Lookup would require extrapolation into the future" errors.
+
+#### Purpose
+
+Monitors TF transform timing to identify and diagnose clock synchronization issues, timing problems, and transform delays that cause extrapolation errors in ROS2 navigation and localization.
+
+#### Usage
+
+```bash
+ros2 run handy tf_error_detector
+```
+
+#### How It Works
+
+- Subscribes to `/tf` and `/tf_static` topics to monitor all transform broadcasts
+- Tracks timing data for each transform pair (frame_id → child_frame_id)
+- Attempts transform lookups every 0.1 seconds at current time
+- Detects when lookups fail due to timing/extrapolation issues
+- Prints periodic summaries every 10 seconds showing all monitored transforms
+
+#### Output
+
+**When timing issues are detected:**
+```
+======================================================================
+TIMING ISSUE DETECTED: map->odom
+======================================================================
+Error: Lookup would require extrapolation into the future...
+Current time: 1234567890.123456789
+Latest TF timestamp: 1234567889.987654321
+Time difference (now - latest TF): 0.135802468 seconds
+⚠️  System time is ahead of TF by 0.135802s
+   This indicates a clock sync or buffering issue
+Average TF publish rate: 10.00 Hz (gap: 0.100000s)
+Lookup success rate: 45.2% (123/272)
+
+Recommendations:
+  1. Check clock sync: timedatectl or chronyc tracking on both machines
+  2. Increase transform_tolerance in Nav2 params (try 0.2-0.5s)
+  3. Check TF publish rates - may be too slow
+======================================================================
+```
+
+**Periodic summary:**
+```
+======================================================================
+TF TIMING SUMMARY
+======================================================================
+✓ map->odom                              |  10.00 Hz | Success:  95.3%
+⚠️  odom->base_link                       |   5.12 Hz | Success:  67.8%
+✓ base_link->laser                       |  20.00 Hz | Success:  98.1%
+======================================================================
+```
+
+#### Common Issues Detected
+
+- **Clock synchronization**: TF timestamps ahead or behind system time
+- **Slow publish rates**: Transforms not published frequently enough
+- **Network delays**: Latency causing transforms to arrive late
+- **Buffer issues**: Transform buffer tolerance too small
+
+#### Use Cases
+
+- Debugging Nav2 extrapolation errors
+- Monitoring multi-robot systems with distributed clocks
+- Identifying timing issues before deployment
+- Tuning `transform_tolerance` parameters
+
 ### net_latency
 
 Network latency measurement tool for ROS2 communication across distributed systems.
