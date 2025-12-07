@@ -54,11 +54,16 @@ ros2 run handy ros2_params topic 3.0 16
 
 ### tf_error_detector
 
-TF transform timing diagnostic tool that monitors and detects "Lookup would require extrapolation into the future" errors.
+TF transform monitoring and exception detection tool that tracks lookup errors and timing issues.
 
 #### Purpose
 
-Monitors TF transform timing to identify and diagnose clock synchronization issues, timing problems, and transform delays that cause extrapolation errors in ROS2 navigation and localization.
+Monitors all TF transforms to detect and diagnose three types of lookup exceptions:
+- **LookupException**: Transform not available (missing or disconnected frames)
+- **ConnectivityException**: No path between frames in the TF tree
+- **ExtrapolationException**: Requested time outside available transform data
+
+Also tracks clock synchronization between TF timestamps and system time.
 
 #### Usage
 
@@ -66,61 +71,81 @@ Monitors TF transform timing to identify and diagnose clock synchronization issu
 ros2 run handy tf_error_detector
 ```
 
+Runs for 10 seconds (configurable via `RUN_DURATION_SEC` constant) and produces a summary report.
+
 #### How It Works
 
 - Subscribes to `/tf` and `/tf_static` topics to monitor all transform broadcasts
+- Waits 1 second for static transforms to load before starting lookups
 - Tracks timing data for each transform pair (frame_id → child_frame_id)
-- Attempts transform lookups every 0.1 seconds at current time
-- Detects when lookups fail due to timing/extrapolation issues
-- Prints periodic summaries every 10 seconds showing all monitored transforms
+- Attempts transform lookups every 0.1 seconds using latest available transform
+- Records exceptions by type and frame pair
+- Detects clock sync issues when TF timestamps differ from system time by ≥25ms
+- Prints comprehensive summary report at end
 
 #### Output
 
-**When timing issues are detected:**
-```
-======================================================================
-TIMING ISSUE DETECTED: map->odom
-======================================================================
-Error: Lookup would require extrapolation into the future...
-Current time: 1234567890.123456789
-Latest TF timestamp: 1234567889.987654321
-Time difference (now - latest TF): 0.135802468 seconds
-⚠️  System time is ahead of TF by 0.135802s
-   This indicates a clock sync or buffering issue
-Average TF publish rate: 10.00 Hz (gap: 0.100000s)
-Lookup success rate: 45.2% (123/272)
+The tool produces three sections in its final report:
 
-Recommendations:
-  1. Check clock sync: timedatectl or chronyc tracking on both machines
-  2. Increase transform_tolerance in Nav2 params (try 0.2-0.5s)
-  3. Check TF publish rates - may be too slow
-======================================================================
+**1. Transform Summary:**
+```
+================================================================================
+TF MONITORING SUMMARY - ALL TRANSFORMS
+================================================================================
+[OK]   base_link->laser                         |  20.00 Hz | # exceptions on lookup: 0
+[WARN] odom->base_footprint                     |  10.05 Hz | # exceptions on lookup: 5
+[FAIL] map->odom                                 |   0.00 Hz | # exceptions on lookup: 23
+================================================================================
 ```
 
-**Periodic summary:**
+**2. Clock Sync Info (if timestamp differences ≥25ms detected):**
 ```
-======================================================================
-TF TIMING SUMMARY
-======================================================================
-✓ map->odom                              |  10.00 Hz | Success:  95.3%
-⚠️  odom->base_link                       |   5.12 Hz | Success:  67.8%
-✓ base_link->laser                       |  20.00 Hz | Success:  98.1%
-======================================================================
+================================================================================
+CLOCK SYNC INFO
+================================================================================
+base_footprint->base_link: TF behind by 1226015.6ms
+odom->base_footprint: TF behind by 33.2ms
+================================================================================
 ```
+
+**3. Error Report (if lookup exceptions occurred):**
+```
+================================================================================
+ERROR REPORT - TRANSFORMS WITH TIMING ISSUES
+================================================================================
+
+map->odom: 23 errors, 1 types
+    ExtrapolationException
+    System: 14:32:15.123 | TF: 14:32:15.087 | Diff: 36.2ms
+    Rate: 10.0 Hz | Success: 45.2%
+
+Total transforms with errors: 1
+================================================================================
+```
+
+If no exceptions occur, shows: "No timing errors detected."
+
+#### Configuration Constants
+
+Adjust these constants at the top of the file:
+- `TIMESTAMP_THRESHOLD_SEC`: Clock sync reporting threshold (default: 25ms)
+- `RUN_DURATION_SEC`: How long to monitor (default: 10 seconds)
+- `TIMER_PERIOD_SEC`: Lookup attempt frequency (default: 0.1s)
+- `STARTUP_DELAY_SEC`: Delay before lookups start (default: 1s)
 
 #### Common Issues Detected
 
-- **Clock synchronization**: TF timestamps ahead or behind system time
-- **Slow publish rates**: Transforms not published frequently enough
-- **Network delays**: Latency causing transforms to arrive late
-- **Buffer issues**: Transform buffer tolerance too small
+- **LookupException**: Missing transforms, frame not in TF tree
+- **ConnectivityException**: Disconnected TF tree branches
+- **ExtrapolationException**: TF buffer too small or publish rate too slow
+- **Clock synchronization**: TF timestamps significantly different from system time
 
 #### Use Cases
 
-- Debugging Nav2 extrapolation errors
+- Debugging TF tree connectivity issues
+- Detecting timing problems before they cause navigation errors
 - Monitoring multi-robot systems with distributed clocks
-- Identifying timing issues before deployment
-- Tuning `transform_tolerance` parameters
+- Validating TF configuration in new robot setups
 
 ### net_latency
 
